@@ -1,4 +1,6 @@
 ﻿module FsDice.Dice
+// Do I really need to open the containing namespace here?  That seems weird.
+open FsDice
 open FsDice.Prob
 
 /// Add distributions.  Restricts to int.  Make inline?
@@ -44,7 +46,7 @@ let rec exploder maxTimes explodeOn d =
     else
         d |> Dist.bind (fun di ->
             if di = explodeOn then
-                shiftDice (exploder (maxTimes - 1) explodeOn d) explodeOn
+                addInt (exploder (maxTimes - 1) explodeOn d) explodeOn
             else Dist.just di)
 
 let ed4  = exploder 5 4  d4
