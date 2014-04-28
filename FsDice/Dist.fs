@@ -41,21 +41,38 @@ module Dist =
         let p = 1.0 / float (Seq.length xs)
         xs |> Seq.map (fun x -> (x, p)) |> ofSeq
 
-    // TODO: update with more complex version
-    let print (d: Dist<'T>) =
-        d |> Map.iter (fun v p ->
-            if p >= 0.0005 then
-                printfn "%5A: %5.1f" v (p * 100.0))
+    let outcomes (d: Dist<'T>) =
+        Map.toSeq d |> Seq.map fst
 
-    let cumprob (d: Dist<'T>) =
-        let xs = d |> Map.toSeq |> Seq.map fst
-        let cps = d |> Map.toSeq |> Seq.map snd |> Seq.scan (+) 0.0 |> Seq.skip 1
-        Seq.zip xs cps
+    let probs (d: Dist<'T>) =
+        Map.toSeq d |> Seq.map snd
+
+    let cumprobs (d: Dist<'T>) =
+        probs d |> Seq.scan (+) 0.0
+
+    let cumprobSeq (d: Dist<'T>) =
+        Seq.zip (outcomes d) (cumprobs d |> Seq.skip 1)
 
     let choose (r: System.Random) (d: Dist<'T>) =
         let rp = r.NextDouble()
-        d |> cumprob |> Seq.find (fun (x, cp) -> cp >= rp) |> fst
+        cumprobSeq d |> Seq.find (fun (x, cp) -> cp >= rp) |> fst
 
+    type OutputType = Exactly | AtLeast | AtMost
+
+    // Generic distribution printer.
+    let printGen minProb probFormatter valueFormatter outputType (d: 'a Dist) =
+        let probsToDisplay =
+            match outputType with
+            | Exactly -> probs d
+            | AtLeast -> cumprobs d |> Seq.map ((-) 1.)
+            | AtMost  -> cumprobs d |> Seq.skip 1
+        Seq.zip (outcomes d) probsToDisplay
+        |> Seq.iter (fun (v, p) ->
+            if p >= minProb then
+                printfn "%s: %s" (valueFormatter v) (probFormatter p))
+
+    let print (d: 'a Dist) =
+        d |> printGen 0.0005 (fun p -> sprintf "%5.1f" (p * 100.0)) (sprintf "%A") Exactly
 
 // Is there a better place to put this?
 module Prob =
