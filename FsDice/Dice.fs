@@ -1,7 +1,6 @@
 ﻿module FsDice.Dice
 
-// Do I really need to open the containing namespace here?  That seems weird.
-open FsDice
+module Dist = FsDice.Dist
 open FsDice.Prob
 
 /// Add distributions.  Restricts to int.  Make inline?
@@ -26,9 +25,9 @@ let rec repeatAndSum d n =
 let addInt d i = Dist.fmapInjective ((+) i) d
 
 let printIntType outputType d =
-    printGen 0.0005 (fun p -> sprintf "%5.1f" (p * 100.0)) (sprintf "%5d") outputType d
+    Dist.printGen 0.0005 (fun p -> sprintf "%5.1f" (p * 100.0)) (sprintf "%5d") outputType d
 
-let printInt d = printIntType Exactly d
+let printInt d = printIntType Dist.Exactly d
 
 let rec repeatAndSumProb d n =
     match n with
